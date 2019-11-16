@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="pers.wsf.multiBlog.mapper.ArticleMapper">
+
+
+
+	<!-- 查询语句要传入多个不同类型的参数呢？ -->
+	<!-- <select id="getANearArticle" resultMap="Article" parameterType="String,int"> 
+		SELECT * FROM t_article WHERE TIME< <if test="start!=null and count!=null"> 
+		limit #{start},#{count} </if> </select> -->
+	<insert id="addArticle" parameterType="Article">
+		insert into t_article
+		(title,author,sort,time,star,comment,visit,content)
+		values
+		(#{title},#{author},#{sort},#{time},#{star},#{comment},#{visit},#{content})
+	</insert>
+	<!-- 根据request传过来的参数进行赋值（进行insert语句）；类型不能为HttpServletRequest，要看request传过来的整体类型：Article -->
+	<insert id="createArticle">
+		insert into t_article
+		(user_id,sort_id,title,time,content)
+		values
+		(#{user_id},#{sort_id},#{title},#{time},#{content})
+	</insert>
+
+	<delete id="deleteArticle" parameterType="int">
+		delete from t_article
+		where article_id =#{id}
+	</delete>
+	
+	<update id="updateArticle" parameterType="Article">		
+		update t_article set
+		sort_id = #{sortId},title = #{title},content = #{content} 
+		where article_id = #{article_id}
+	</update>
+	
+	<select id="getCreatedArticle" parameterType="String" resultMap="getCreatedArticleResultMap">				
+		select a.title,a.time,a.content,s.sort,u.username from t_sort as s
+		join t_article as a on a.sort_id = s.sort_id
+		join t_user as u on u.user_id = a.user_id
+		where a.title =#{title}
+	</select>
+
+	<select id="getUpdatedArticle" resultType="pers.wsf.multiBlog.pojo.Article">
+		select article_id,title from t_article 
+		where user_id = #{userId} and title = #{title}
+	</select>
+	
+	<select id="getCreateArticleByUser" resultType="pers.wsf.multiBlog.pojo.Article">
+		select * from t_article
+		where user_id=#{userId} and time=#{time}
+	</select>
+	
+	<select id="getCreatedArticleByAuthor_Title"
+		resultType="Integer">
+		select article_id from
+		t_article where author=#{author} and
+		title=#{title}
+	</select>
+	
+	<select id="listAllArticle" resultMap="listAllArticleResultMap">
+		select a.article_id,a.title,a.time,a.star,a.visit,a.content,u.username from t_article as a 
+		join t_user as u on u.user_id=a.user_id	
+		order by a.time	desc
+	</select>
+	
+	<select id="getAllArticle" resultType="pers.wsf.multiBlog.pojo.Article">
+		select *from t_article
+	</select>
+	
+	<select id="getUserArticle" parameterType="Integer" resultMap="getUserArticleResultMap">
+		select a.article_id,a.title,a.time,u.username from t_article as a 
+		join t_user as u on u.user_id = a.user_id
+		where u.user_id=#{user_id}
+	</select>
+	
+	<select id="getOneArticle" parameterType="Integer"
+		resultMap="getOneArticleResultMap">
+		select a.article_id,a.title,a.time,a.visit,a.star,a.content,s.sort,u.username from t_sort as s 
+		join t_article as a on a.sort_id = s.sort_id
+		join t_user as u on u.user_id = a.user_id
+		where a.article_id=#{article_id}
+	</select>
+	
+	<select id="getOneArticleById" parameterType="Integer" resultMap="getOneArticleByIdResultMap">
+		select a.article_id,a.title,a.time,a.visit,a.star,a.content,s.sort,t.tag,u.username from t_sort as s
+		join t_article as a on a.sort_id = s.sort_id
+		join t_tag as t on t.article_id = a.article_id
+		join t_user as u on u.user_id = a.user_id
+		where a.article_id = #{article_id}
+	</select>
+	
+	<select id="getArticleAndSort" parameterType="Integer" resultMap="getArticleAndSortResultMap">
+		select a.article_id,a.title,a.time,a.visit,a.star,a.content,s.sort,u.username from t_sort as s
+		join t_article as a on a.sort_id = s.sort_id
+		join t_user as u on u.user_id = a.user_id
+		where a.article_id=#{article_id}
+	</select>
+	
+	<!-- 要写SQL语句：查出所有同一分类的文章：select * from t_article where sort=#{sort} -->
+	<!--此处实现的方式不同：传两个参数，1. 字段名 2. 字段里的值；为了避免重名，故字段名用的column -->
+	<select id="getArticleBySort" parameterType="String" resultMap="getArticleBySortResultMap">
+		select s.sort,a.title,a.time,a.visit,a.star,u.username from t_sort as s
+		join t_article as a on a.sort_id=s.sort_id
+		join t_user as u on u.user_id=a.user_id
+		where s.sort = #{value} 		
+	</select>
+	
+	<select id="getArticleByTag" parameterType="String" resultMap="getArticleByTagResultMap">
+		select a.article_id,a.title,a.time,a.visit,t.tag,u.username from t_tag as t
+		join t_article as a on t.article_id=a.article_id
+		join t_user as u on u.user_id=a.user_id
+		where t.tag=#{tag}
+	</select>
+	
+	<select id="getArticleByUser" parameterType="Integer" resultType="Article">	
+		select * from t_article as a
+		join t_user as u on u.user_id = a.user_id
+		where u.user_id=#{user_id}
+	</select>
+	<!--getArticleByTag: 联表查询 -->
+	<!-- <select id="getArticleByTagId" resultMap="getArticleByTagIdResultMap">
+
+		select a.article_id,a.title,a.time,a.visit,t.tag from t_article a,t_tag t
+		where a.article_id
+		= t.article_id and
+		t.article_id=#{article_id}
+	</select> -->
+
+
+	<select id="getAllSort" resultType="String">
+		select distinct(sort) from t_article as a 
+		join t_sort as s on s.sort_id=a.sort_id
+		order by sort
+	</select>
+	
+	<!-- 不用order by，用group by按tag对数据进行分组，得到唯一的tag -->
+	<select id="getAllTag" resultType="String">
+		select distinct(tag) from
+		t_tag order by tag
+	</select>
+
+
+	<select id="getLastArticle" resultType="Article">
+		select * from t_article
+		order by time desc limit 1
+	</select>
+
+	<select id="getArticleByPreviousTime" parameterType="String"
+		resultType="pers.wsf.multiBlog.pojo.Article">
+		select * from t_article 
+		where time &lt; #{time} order by time
+		desc limit 1
+	</select>
+	
+	<select id="getArticleByNextTime" parameterType="String"
+		resultType="pers.wsf.multiBlog.pojo.Article">
+		select * from t_article 
+		where time  &gt; #{time} order by time
+		desc limit 1
+	</select>
+	<!-- <resultMap type="Article" id="getArticleByTagResultMap">
+		java属性 对应 数据库 列
+		<id property="id" column="id"/>
+		<result property="title" column="title"/>
+		<result property="author" column="author"/>
+		<result property="sort" column="sort"/>
+		<result property="time" column="time"/>
+		<association property="tag" javaType="Tag" >
+			<id property="id" column="tag_id"/>
+			<result property="article_id" column="article_id"/>
+			<result property="tag" column="tag"/>
+		</association>
+		
+	</resultMap> -->
+	<!-- 一对一映射; 那么resultMap返回的数据用什么封装，如果返回的是两个表的集合呢？ -->
+	<!-- <select id="getArticleByTag" parameterType="String" resultMap="getArticleByTagResultMap">
+		select * from t_article a,t_tag t
+		where a.article_id=t.article_id and t.tag=#{tag_name}
+	</select> -->
+	<select id="getTagByArticle" parameterType="String" resultType="pers.wsf.multiBlog.pojo.Tag">
+		select * from t_tag 
+		where tag=#{tag_name}
+	</select>
+	
+	<select id="getUserByArticleId" parameterType="Integer" resultMap="getUserByArticleIdResultMap">
+		select u.username from t_article as a 
+		join t_user as u on u.user_id = a.user_id
+		where a.article_id=#{article_id}
+	</select>
+	
+	<select id="searchArticle" parameterType="String" resultMap="searchArticleResultMap">
+		<!-- 按照title进行搜索，建立title索引 -->
+		<!-- 搜索到文章后，跳转到新页面 来显示搜索到的内容 -->
+		select a.article_id,a.title,a.time,u.username from t_article as a
+		join t_user as u on u.user_id = a.user_id
+		where title like '%${title}%';
+	</select>
+	
+	<resultMap type="pers.wsf.multiBlog.pojo.Article" id="getCreatedArticleResultMap">		
+		<result property="title" column="title"/>
+		<result property="time" column="time"/>
+		<result property="content" column="content"/>
+		<association property="sort" javaType="pers.wsf.multiBlog.pojo.Sort">
+			<result property="sort" column="sort"/>
+		</association>
+		<association property="user" javaType="pers.wsf.multiBlog.pojo.User">
+			<result property="username" column="username"/>
+		</association>
+	</resultMap>
+	<!-- 注意此处的resultMap ,要改为什么呢 -->
+	<!-- <select id="getAllArticle" resultMap="articleMap"> select * from t_article 
+		</select> -->
+
+	<!-- 多个参数是这样传吗 -->
+	<!-- <select id="getArticleByColumn" parameterType="String,String" resultMap="List"> 
+		select * from t_article where column = ？ </select> -->
+
+	<resultMap type="pers.wsf.multiBlog.pojo.Article" id="listAllArticleResultMap">
+		<id property="article_id" column="article_id"/>
+		<result property="title" column="title"/>
+		<result property="time" column="time"/>
+		<result property="star" column="star"/>
+		<result property="visit" column="visit"/>
+		<result property="content" column="content"/>
+		<association property="user" javaType="pers.wsf.multiBlog.pojo.User">
+			<result property="username" column="username"/>
+		</association>
+	</resultMap>
+	
+	<resultMap type="pers.wsf.multiBlog.pojo.Article" id="getArticleByTagIdResultMap">
+		<id property="article_id" column="article_id"/>
+		<result property="title" column="title"/>
+		<result property="time" column="time"/>
+		<result property="visit" column="visit"/>
+		<association property="tag" javaType="pers.wsf.multiBlog.pojo.Tag">
+			<result property="tag" column="tag"/>
+		</association>		
+	</resultMap>
+	<!-- tag与article联结 -->
+	<resultMap type="pers.wsf.multiBlog.pojo.Article" id="getArticleByTagResultMap">
+		<result property="article_id" column="article_id"/>
+		<result property="title" column="title"/>
+		<result property="time" column="time"/>
+		<result property="visit" column="visit"/>
+		<association property="user" javaType="pers.wsf.multiBlog.pojo.User">
+			<result property="username" column="username"/>
+		</association>
+		<collection property="tag" ofType="pers.wsf.multiBlog.pojo.Tag">
+			<result property="tag" column="tag"/>
+		</collection>		
+	</resultMap>
+	
+	<!-- article与user联结 -->
+	<resultMap type="pers.wsf.multiBlog.pojo.Article" id="getUserArticleResultMap">
+		<result property="article_id" column="article_id"/>
+		<result property="title" column="title"/>
+		<result property="time" column="time"/>
+		<association property="user" javaType="pers.wsf.multiBlog.pojo.User">
+			<result property="username" column="username"/>
+		</association>
+	</resultMap>
+	<!-- article与sort联结 -->
+	<resultMap type="pers.wsf.multiBlog.pojo.Article" id="getOneArticleResultMap">
+		<id property="article_id" column="article_id"/>
+		<result property="title" column="title"/>
+		<result property="time" column="time"/>
+		<result property="visit" column="visit"/>
+		<result property="star" column="star"/>
+		<result property="content" column="content"/>
+		<association property="user" javaType="pers.wsf.multiBlog.pojo.User">
+			<result property="username" column="username"/>
+		</association>
+		<collection property="sort" ofType="pers.wsf.multiBlog.pojo.Sort">
+			<result property="sort" column="sort"/>
+		</collection>
+	</resultMap>
+	
+	<resultMap type="pers.wsf.multiBlog.pojo.Article" id="getOneArticleByIdResultMap">	
+		<id property="article_id" column="article_id"/>
+		<result property="title" column="title"/>		
+		<result property="time" column="time"/>
+		<result property="visit" column="visit"/>
+		<result property="star" column="star"/>
+		<result property="content" column="content"/>
+		<association property="sort" javaType="pers.wsf.multiBlog.pojo.Sort">
+			<result property="sort" column="sort"/>
+		</association>
+		<association property="user" javaType="pers.wsf.multiBlog.pojo.User">
+			<result property="username" column="username"/>
+		</association>
+		<collection property="tag" ofType="pers.wsf.multiBlog.pojo.Tag">
+			<result property="tag" column="tag"/>
+		</collection>
+	</resultMap>
+	<!-- article与sort联结 -->
+	<resultMap type="pers.wsf.multiBlog.pojo.Article" id="getArticleAndSortResultMap">
+		<id property="article_id" column="article_id"/>
+		<result property="title" column="title"/>
+		<result property="time" column="time"/>
+		<result property="visit" column="visit"/>
+		<result property="star" column="star"/>
+		<result property="content" column="content"/>
+		<association property="user" javaType="pers.wsf.multiBlog.pojo.User">
+			<result property="username" column="username"/>
+		</association>
+		<association property="sort" javaType="pers.wsf.multiBlog.pojo.Sort">
+			<result property="sort" column="sort"/>
+		</association>
+	</resultMap>
+	
+	<!-- sort与article联结 -->
+	<resultMap type="pers.wsf.multiBlog.pojo.Article" id="getArticleBySortResultMap">		
+		<result property="title" column="title"/>
+		<result property="time" column="time"/>
+		<result property="visit" column="visit"/>
+		<result property="star" column="star"/>
+		<association property="sort" javaType="pers.wsf.multiBlog.pojo.Sort">
+			<result property="sort" column="sort"/>			
+		</association>
+		<association property="user" javaType="pers.wsf.multiBlog.pojo.User">
+				<result property="username" column="username"/>
+		</association>
+	</resultMap>
+	
+	<!-- <resultMap type="pers.wsf.multiBlog.pojo.Sort" id="getArticleBySortResultMap">
+		<result property="sort" column="sort"/>
+		<collection property="articles" ofType="pers.wsf.multiBlog.pojo.Article">
+			<result property="title" column="title"/>
+			<result property="time" column="time"/>
+			<result property="visit" column="visit"/>
+			<result property="star" column="star"/>
+			<association property="user" javaType="pers.wsf.multiBlog.pojo.User">
+				<result property="username" column="username"/>
+			</association>
+		</collection>
+	</resultMap> -->
+	<resultMap type="pers.wsf.multiBlog.pojo.Article" id="getUserByArticleIdResultMap">
+		<association property="user" javaType="pers.wsf.multiBlog.pojo.User">
+			<result property="username" column="username"/>
+		</association>
+	</resultMap>
+	
+	<resultMap type="pers.wsf.multiBlog.pojo.Article" id="searchArticleResultMap">
+		<id property="article_id" column="article_id"/>
+		<result property="title" column="title"/>
+		<result property="time" column="time"/>
+		<association property="user" javaType="pers.wsf.multiBlog.pojo.User">
+			<result property="username" column="username"/>
+		</association>
+	</resultMap>
+</mapper>

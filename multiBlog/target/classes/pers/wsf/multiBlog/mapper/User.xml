@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="pers.wsf.multiBlog.mapper.UserMapper">
+
+	<insert id="registUser" >
+        insert into t_user (username,password) values(#{username},#{password})        
+	</insert>
+	
+	<delete id="deleteUser" parameterType="User">
+	    delete from t_user where user_id=#{id}
+	</delete>
+	
+	<!-- loginUser: 传了两个参数，但这两个参数同属于一个类型User，故参数类型写成User -->
+	<!-- username=#{username} ，先获取的是UserMapper里的映射参数，最终获取的是bean层里的userName,是这样获取的吗-->
+	<!--loginUser用不到！  -->
+	<select id="loginUser"  resultType="pers.wsf.multiBlog.pojo.User">
+	    select * from t_user where 
+	    username = #{username} 
+	    and password = #{password}
+	</select>
+	
+	<select id="listUser" resultType="User">
+	    select *from t_user
+	</select>
+	
+	<select id="getOneUser" resultType="User">
+	    select * from t_user 
+	    where user_id=#{id}
+	</select>
+	
+	<select id="getOneUserByName" resultType="User">
+		select * from t_user 
+		where username=#{username}
+	</select>
+	
+	<select id="getUserIdByName" parameterType="String" resultType="Integer">
+		select user_id from t_user
+		where username=#{username}
+	</select>
+	
+	<select id="getUsernameById" parameterType="Integer" resultType="String">
+		select username from t_user as u 
+		join t_article as a on a.user_id = u.user_id
+		where article_id=#{article_id}
+	</select>
+	<select id="findUser" parameterType="pers.wsf.multiBlog.pojo.User" resultType="User">
+	    select * from t_user 
+	    where username=#{username} and password=#{password}
+	</select>
+
+  
+	
+</mapper>
